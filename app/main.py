@@ -66,7 +66,7 @@ app = FastAPI(
     - **Face Detection**: MTCNN
     - **Face Recognition**: FaceNet (Inception-ResNet-V1)
     - **Pretrained Model**: VGGFace2
-    - **Embedding Dimension**: 128
+    - **Embedding Dimension**: 512
     
     ### Author:
     - MetaHRM Development Team

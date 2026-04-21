@@ -1,0 +1,155 @@
+{
+  "info": {
+    "name": "MetaHRM Face Service",
+    "description": "API collection cho Face Recognition Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Basic Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Health Check with Model Info",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health?include_model_info=true",
+              "host": ["{{base_url}}"],
+              "path": ["health"],
+              "query": [
+                {
+                  "key": "include_model_info",
+                  "value": "true"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Face Enrollment",
+      "item": [
+        {
+          "name": "Enroll Face - Success",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has success=true\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.success).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has embedding array\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data.embedding).to.be.an('array');",
+                  "    pm.expect(jsonData.data.embedding.length).to.eql(128);",
+                  "});",
+                  "",
+                  "// Save embedding to environment",
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set(\"test_embedding\", JSON.stringify(jsonData.data.embedding));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 123,\n  \"image_base64\": \"{{test_image_base64}}\",\n  \"is_primary\": true,\n  \"note\": \"Test enrollment from Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/face/enroll",
+              "host": ["{{base_url}}"],
+              "path": ["api", "face", "enroll"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Face Verification",
+      "item": [
+        {
+          "name": "Verify Face - Same Person",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Is match = true\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.is_match).to.eql(true);",
+                  "});",
+                  "",
+                  "pm.test(\"Confidence > 80\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.confidence).to.be.above(80);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": 123,\n  \"image_base64\": \"{{test_image_base64}}\",\n  \"known_embeddings\": [{{test_embedding}}],\n  \"verification_threshold\": 80.0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/face/verify",
+              "host": ["{{base_url}}"],
+              "path": ["api", "face", "verify"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "test_image_base64",
+      "value": "PASTE_YOUR_BASE64_IMAGE_HERE"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Tests
+tests/
+.pytest_cache/
+
+# Logs (sẽ mount từ volume)
+logs/
+
+# Data samples
+data/sample_faces/
+
+# Docs
+README.md
+docs/

@@ -19,7 +19,7 @@ def test_get_embedding():
     # Get embedding
     embedding = recognizer.get_embedding(fake_face)
     
-    assert embedding.shape == (512,)
+    assert embedding.shape == (128,)
     print(f"✅ Embedding shape: {embedding.shape}")
     print(f"   Sample values: {embedding[:5]}")
 

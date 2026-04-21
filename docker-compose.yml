@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  face-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: metahrm-face-service
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_NAME=MetaHRM Face Recognition Service
+      - APP_VERSION=1.0.0
+      - DEBUG=True
+      - FACENET_MODEL=vggface2
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./logs:/app/logs
+      - ./weights:/app/weights
+      - ./data:/app/data
+    restart: unless-stopped
+    networks:
+      - metahrm-network
+
+networks:
+  metahrm-network:
+    driver: bridge

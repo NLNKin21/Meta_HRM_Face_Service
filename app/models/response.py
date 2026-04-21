@@ -18,19 +18,10 @@ class FaceEnrollResponse(BaseModel):
         "message": "Face enrolled successfully",
         "data": {
             "employee_id": 123,
-            "embedding": [0.123, -0.456, ...],
+            "embedding": [0.123, -0.456, ...],  # 512 values
             "face_confidence": 0.99,
             "quality_score": 0.85,
             ...
-        }
-    }
-    
-    Example Failure:
-    {
-        "success": false,
-        "message": "Multiple faces detected",
-        "data": {
-            "anomalies": {...}
         }
     }
     """
@@ -50,7 +41,7 @@ class FaceEnrollResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(),  # ✅ Fixed
         description="Thời gian xử lý"
     )
     
@@ -61,7 +52,7 @@ class FaceEnrollResponse(BaseModel):
                 "message": "Face enrolled successfully",
                 "data": {
                     "employee_id": 123,
-                    "embedding": [0.123, -0.456],  # Truncated for example
+                    "embedding": [0.123] * 512,  # ✅ 512 dimensions
                     "face_confidence": 0.99,
                     "quality_score": 0.85,
                     "face_quality_metrics": {
@@ -81,36 +72,6 @@ class FaceEnrollResponse(BaseModel):
 class FaceVerifyResponse(BaseModel):
     """
     Response model cho face verification
-    
-    Example Success (Match):
-    {
-        "success": true,
-        "message": "Verification completed",
-        "is_match": true,
-        "confidence": 95.67,
-        "details": {
-            "euclidean_distance": 0.45,
-            "cosine_similarity": 0.89,
-            "best_match_index": 0
-        },
-        "anomalies": []
-    }
-    
-    Example Success (No Match):
-    {
-        "success": true,
-        "message": "Verification completed",
-        "is_match": false,
-        "confidence": 45.23,
-        "details": {...},
-        "anomalies": [
-            {
-                "type": "FACE_MISMATCH",
-                "severity": "CRITICAL",
-                "message": "Face does not match"
-            }
-        ]
-    }
     """
     success: bool = Field(
         ...,
@@ -145,7 +106,7 @@ class FaceVerifyResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(),  # ✅ Fixed
         description="Thời gian xử lý"
     )
     
@@ -189,7 +150,7 @@ class HealthCheckResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=datetime.now,
+        default_factory=lambda: datetime.now(),  # ✅ Fixed
         description="Thời gian check"
     )
     
@@ -206,9 +167,9 @@ class HealthCheckResponse(BaseModel):
                 "version": "1.0.0",
                 "timestamp": "2024-01-15T10:00:00",
                 "model_info": {
-                    "model_name": "InceptionResnetV1",
-                    "pretrained_on": "vggface2",
-                    "embedding_dim": 128
+                    "model_name": "buffalo_l",  # ✅ Updated
+                    "provider": "InsightFace",
+                    "embedding_dim": 512  # ✅ Updated
                 }
             }
         }
@@ -239,7 +200,7 @@ class ErrorResponse(BaseModel):
     )
     
     timestamp: datetime = Field(
-        default_factory=datetime.now
+        default_factory=lambda: datetime.now()  # ✅ Fixed
     )
     
     class Config:

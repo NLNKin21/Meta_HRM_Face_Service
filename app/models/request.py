@@ -6,6 +6,7 @@ Validate và serialize request data
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 import re
+import base64
 
 
 class FaceEnrollRequest(BaseModel):
@@ -54,16 +55,28 @@ class FaceEnrollRequest(BaseModel):
         # Remove whitespace
         v = v.strip()
         
-        # Check if contains base64 characters
-        base64_pattern = r'^[A-Za-z0-9+/=]+$'
-        
         # If has data URI header, extract base64 part
         if ',' in v:
-            v = v.split(',')[1]
+            parts = v.split(',')
+            if len(parts) != 2:
+                raise ValueError("Invalid data URI format")
+            v = parts[1]
         
-        # Validate pattern (allow some flexibility)
-        if not re.match(base64_pattern, v.replace('\n', '').replace('\r', '')):
+        # Remove whitespace characters
+        v_clean = v.replace('\n', '').replace('\r', '').replace(' ', '')
+        
+        # Validate base64 format
+        base64_pattern = r'^[A-Za-z0-9+/]*={0,2}$'
+        if not re.match(base64_pattern, v_clean):
             raise ValueError("Invalid base64 format")
+        
+        # Try to decode to verify
+        try:
+            decoded = base64.b64decode(v_clean, validate=True)
+            if len(decoded) < 100:
+                raise ValueError("Decoded image data too small (< 100 bytes)")
+        except Exception as e:
+            raise ValueError(f"Cannot decode base64: {str(e)}")
         
         return v
     
@@ -105,7 +118,7 @@ class FaceVerifyRequest(BaseModel):
     known_embeddings: List[List[float]] = Field(
         ...,
         min_length=1,
-        description="Danh sách các embedding đã lưu của nhân viên"
+        description="Danh sách các embedding đã lưu của nhân viên (512 dimensions)"
     )
     
     verification_threshold: Optional[float] = Field(
@@ -123,8 +136,27 @@ class FaceVerifyRequest(BaseModel):
             raise ValueError("Image base64 string too short")
         
         v = v.strip()
+        
+        # Extract base64 from data URI if present
         if ',' in v:
-            v = v.split(',')[1]
+            parts = v.split(',')
+            if len(parts) != 2:
+                raise ValueError("Invalid data URI format")
+            v = parts[1]
+        
+        # Clean and validate
+        v_clean = v.replace('\n', '').replace('\r', '').replace(' ', '')
+        
+        base64_pattern = r'^[A-Za-z0-9+/]*={0,2}$'
+        if not re.match(base64_pattern, v_clean):
+            raise ValueError("Invalid base64 format")
+        
+        try:
+            decoded = base64.b64decode(v_clean, validate=True)
+            if len(decoded) < 100:
+                raise ValueError("Decoded image too small")
+        except Exception as e:
+            raise ValueError(f"Cannot decode base64: {str(e)}")
         
         return v
     
@@ -133,16 +165,29 @@ class FaceVerifyRequest(BaseModel):
     def validate_embeddings(cls, v: List[List[float]]) -> List[List[float]]:
         """
         Validate embedding vectors
+        
+        ⚠️ KHÔNG validate dimension cứng ở đây vì:
+        - Model có thể thay đổi (FaceNet 128-dim, InsightFace 512-dim)
+        - Để verification service xử lý dimension mismatch linh hoạt hơn
+        
+        Chỉ validate:
         - Phải có ít nhất 1 embedding
-        - Mỗi embedding phải có 128 chiều
+        - Mỗi embedding không được rỗng
         """
         if not v or len(v) == 0:
             raise ValueError("Must provide at least one known embedding")
         
         for idx, emb in enumerate(v):
-            if len(emb) != 128:
-                raise ValueError(
-                    f"Embedding at index {idx} has {len(emb)} dimensions, expected 128"
+            if not emb or len(emb) == 0:
+                raise ValueError(f"Embedding at index {idx} is empty")
+            
+            # Optional: warn if dimension seems unusual (but don't reject)
+            if len(emb) not in [128, 512]:
+                # Log warning but allow it
+                import logging
+                logging.getLogger(__name__).warning(
+                    f"Unusual embedding dimension at index {idx}: {len(emb)} "
+                    f"(expected 128 or 512)"
                 )
         
         return v
@@ -153,8 +198,8 @@ class FaceVerifyRequest(BaseModel):
                 "employee_id": 123,
                 "image_base64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
                 "known_embeddings": [
-                    [0.123] * 128,  # Embedding 1
-                    [-0.456] * 128  # Embedding 2
+                    [0.123] * 512,  # ✅ Embedding 1 (512-dim for InsightFace)
+                    [-0.456] * 512  # ✅ Embedding 2
                 ],
                 "verification_threshold": 80.0
             }
