@@ -71,3 +71,19 @@ python -m uvicorn app.main:app --reload
 # Server chạy tại http://localhost:8000+
 
 # Swagger UI: http://localhost:8000/docs
+
+
+@echo off
+echo Starting MetaHRM services...
+
+:: Mở terminal 1 - Face AI
+start "Face AI" uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+:: Đợi 15 giây cho models load
+timeout /t 15 /nobreak
+
+:: Mở terminal 2 - ngrok
+start "ngrok" cmd /k "cd /d D:\Meta HRM && ngrok http 8000"
+
+echo Done! Check ngrok URL and update Railway variable.
+pause
